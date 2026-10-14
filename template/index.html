@@ -1,0 +1,201 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Directory</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+
+<body>
+    <main class="container">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">EMPLOYEE MANAGEMENT</p>
+                <h1>Employee Directory</h1>
+                <div class="employee-count">
+                    Showing {{ total_employees }} employee{{ total_employees|pluralize }}
+                </div>
+
+                <p class="page-description">
+                    View and manage employee records.
+                </p>
+            </div>
+
+            <a class="button button-secondary"
+                href="{% url 'export_employees_csv' %}?search={{ search_query|urlencode }}&department={{ selected_department|urlencode }}">
+                Export CSV
+            </a>    
+
+            <a class="button button-primary"
+               href="{% url 'add_employee' %}">
+                Add employee
+            </a>
+             
+        </header>
+
+        <section class="directory-section" aria-label="Employee records">
+            <form method="GET" class="filter-bar">
+                <div class="field search-field">
+                    <label for="search">Search employees</label>
+                    <input
+                        type="search"
+                        id="search"
+                        name="search"
+                        placeholder="Enter employee name"
+                        value="{{ search_query }}"
+                    >
+                </div>
+
+                <div class="field department-field">
+                    <label for="department">Department</label>
+                    <select id="department" name="department">
+                        <option value="">All departments</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept }}"
+                                {% if selected_department == dept %}selected{% endif %}>
+                                {{ dept }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <input type="hidden" name="sort" value="{{ sort }}">
+                <input type="hidden" name="order" value="{{ order }}">
+
+                <div class="filter-actions">
+                    <button type="submit" class="button button-primary">
+                        Apply filters
+                    </button>
+                    <a class="button button-secondary"
+                       href="{% url 'employee_list' %}">
+                        Clear
+                    </a>
+                </div>
+            </form>       
+
+            <div class="table-heading">
+                <h2>All employees</h2>
+                <p>Sort by selecting a column heading.</p>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">
+                                <a href="?sort=employee_id&order={% if sort == 'employee_id' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query|urlencode }}&department={{ selected_department|urlencode }}">
+                                    Employee ID
+                                    <span class="sort-indicator">
+                                        {% if sort == 'employee_id' %}
+                                            {% if order == 'asc' %}↑{% else %}↓{% endif %}
+                                        {% endif %}
+                                    </span>
+                                </a>
+                            </th>
+
+                            <th scope="col">
+                                <a href="?sort=name&order={% if sort == 'name' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query|urlencode }}&department={{ selected_department|urlencode }}">
+                                    Name
+                                    <span class="sort-indicator">
+                                        {% if sort == 'name' %}
+                                            {% if order == 'asc' %}↑{% else %}↓{% endif %}
+                                        {% endif %}
+                                    </span>
+                                </a>
+                            </th>
+
+                            <th scope="col">
+                                <a href="?sort=department&order={% if sort == 'department' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query|urlencode }}&department={{ selected_department|urlencode }}">
+                                    Department
+                                    <span class="sort-indicator">
+                                        {% if sort == 'department' %}
+                                            {% if order == 'asc' %}↑{% else %}↓{% endif %}
+                                        {% endif %}
+                                    </span>
+                                </a>
+                            </th>
+
+                            <th scope="col">Email</th>
+
+                            <th scope="col">
+                                <a href="?sort=salary&order={% if sort == 'salary' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query|urlencode }}&department={{ selected_department|urlencode }}">
+                                    Salary
+                                    <span class="sort-indicator">
+                                        {% if sort == 'salary' %}
+                                            {% if order == 'asc' %}↑{% else %}↓{% endif %}
+                                        {% endif %}
+                                    </span>
+                                </a>
+                            </th>
+
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for employee in employees %}
+                            <tr>
+                                <td class="employee-id">
+                                    {{ employee.employee_id }}
+                                </td>
+                                <td class="employee-name">
+                                    {{ employee.name }}
+                                </td>
+                                <td>{{ employee.department }}</td>
+                                <td class="email-cell">{{ employee.email }}</td>
+                                <td class="salary-cell">{{ employee.salary }}</td>
+                                <td class="row-actions">
+                                    <a class="action-link"
+                                       href="{% url 'edit_employee' employee.id %}">
+                                        Edit
+                                    </a>
+                                    <a class="action-link action-delete"
+                                       href="{% url 'delete_employee' employee.id %}">
+                                        Delete
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    No employees found. Try changing your search
+                                    or department filter.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="table-footer">
+                <p class="page-info">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </p>
+
+
+<nav class="pagination" aria-label="Pagination">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query|urlencode }}&department={{ selected_department|urlencode }}&sort={{ sort }}&order={{ order }}">
+            Previous
+        </a>
+    {% else %}
+        <span class="pagination-disabled">Previous</span>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&search={{ search_query|urlencode }}&department={{ selected_department|urlencode }}&sort={{ sort }}&order={{ order }}">
+            Next
+        </a>
+    {% else %}
+        <span class="pagination-disabled">Next</span>
+    {% endif %}
+</nav>
+
+            </footer>
+        </section>
+    </main>
+</body>
+</html>
